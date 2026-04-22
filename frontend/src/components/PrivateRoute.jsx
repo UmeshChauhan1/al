@@ -6,7 +6,14 @@ const PrivateRoute = ({ children, allow = [] }) => {
   const { isAuthReady, isLoggedIn, isAdmin, isAlumnus, isStudent } = useAuth();
 
   if (!isAuthReady) {
-    return null;
+    return (
+      <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status" aria-hidden="true" />
+          <p className="mt-3 mb-0 text-muted">Loading protected page...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isLoggedIn) {

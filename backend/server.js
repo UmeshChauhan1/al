@@ -22,6 +22,7 @@ const badgeRouter = require('./routes/badge.routes');
 const courseRouter = require('./routes/course.routes');
 const eventCalendarRouter = require('./routes/eventCalendar.routes');
 const reunionRouter = require('./routes/reunion.routes');
+const chatbotRouter = require('./routes/chatbot.routes');
 
 
 dotenv.config();
@@ -40,7 +41,8 @@ const normalizeOrigin = (origin = '') =>
 const DEFAULT_ORIGINS = [
     'http://localhost:5173',
     'https://alumni-management-system-frontend.onrender.com',
-    'https://alumni-management-system-xi.vercel.app'
+    'https://alumni-management-system-xi.vercel.app',
+    'https://al-roan.vercel.app'
 ];
 
 const ENV_ORIGINS = [
@@ -123,6 +125,7 @@ app.use('/api/business', businessRouter);
 app.use('/api/courses', courseRouter);
 app.use('/api/event-calendar', eventCalendarRouter);
 app.use('/api/reunions', reunionRouter);
+app.use('/api/chatbot', chatbotRouter);
 app.use('/api', badgeRouter);
 
 /* =========================

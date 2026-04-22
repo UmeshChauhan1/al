@@ -14,7 +14,19 @@ async function authenticate(req,res,next){
         }
 
         const decoded=jwt.verify(token,process.env.JWT_SECRET);
-        req.user=decoded;
+        const user = await User.findById(decoded.id).select('_id name email type');
+        if (!user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        req.user = {
+            ...decoded,
+            id: user._id,
+            _id: user._id,
+            type: user.type,
+            role: user.type,
+        };
+        req.userData = user;
         next();
     }
     catch(err){

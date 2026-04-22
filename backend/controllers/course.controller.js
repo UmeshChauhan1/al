@@ -7,24 +7,27 @@ const { Course, Enrollment, User } = require('../models/Index');
  */
 async function createCourse(req, res, next) {
   try {
-    const { title, description, category, isFree, price, thumbnail, modules, learningOutcomes, requirements } = req.body;
+    const isAdminRoute = req.baseUrl?.startsWith('/api/admin');
+    const { title, course: courseName, description, category, isFree, price, thumbnail, modules, learningOutcomes, requirements } = req.body;
+    const courseTitle = title || courseName || 'Untitled Course';
     
-    const course = new Course({
-      title,
-      description,
-      category,
+    const newCourse = new Course({
+      title: courseTitle,
+      description: description || courseTitle,
+      category: category || 'General',
       isFree: isFree !== undefined ? isFree : true,
       price: price || 0,
       thumbnail: thumbnail || '',
       modules: modules || [],
       learningOutcomes: learningOutcomes || [],
       requirements: requirements || [],
-      instructor: req.user._id,
-      status: 'draft'
+      instructor: req.user._id || req.user.id,
+      status: isAdminRoute ? 'published' : 'draft',
+      isPublished: isAdminRoute
     });
 
-    await course.save();
-    res.status(201).json({ success: true, message: 'Course created successfully', data: course });
+    await newCourse.save();
+    res.status(201).json({ success: true, message: 'Course created successfully', data: newCourse });
   } catch (err) {
     next(err);
   }
@@ -43,7 +46,10 @@ async function updateCourse(req, res, next) {
     }
 
     // Check authorization - only instructor or admin
-    if (course.instructor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    const userId = req.user._id || req.user.id;
+    const userRole = req.user.role || req.user.type;
+
+    if (course.instructor.toString() !== userId.toString() && userRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to update this course' });
     }
 
@@ -69,7 +75,10 @@ async function publishCourse(req, res, next) {
     }
 
     // Check authorization
-    if (course.instructor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    const userId = req.user._id || req.user.id;
+    const userRole = req.user.role || req.user.type;
+
+    if (course.instructor.toString() !== userId.toString() && userRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to publish this course' });
     }
 
@@ -96,7 +105,10 @@ async function deleteCourse(req, res, next) {
     }
 
     // Check authorization
-    if (course.instructor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    const userId = req.user._id || req.user.id;
+    const userRole = req.user.role || req.user.type;
+
+    if (course.instructor.toString() !== userId.toString() && userRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this course' });
     }
 
@@ -117,7 +129,8 @@ async function deleteCourse(req, res, next) {
 async function listCourses(req, res, next) {
   try {
     const { category, search, level, tags, page = 1, limit = 10 } = req.query;
-    let query = { isPublished: true, status: 'published' };
+    const isAdminRoute = req.baseUrl?.startsWith('/api/admin');
+    let query = isAdminRoute ? {} : { isPublished: true, status: 'published' };
 
     if (category) query.category = category;
     if (level) query.level = level;
@@ -186,14 +199,15 @@ async function getInstructorCourses(req, res, next) {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
+    const userId = req.user._id || req.user.id;
 
-    const courses = await Course.find({ instructor: req.user._id })
+    const courses = await Course.find({ instructor: userId })
       .select('-modules')
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
 
-    const total = await Course.countDocuments({ instructor: req.user._id });
+    const total = await Course.countDocuments({ instructor: userId });
 
     res.json({
       success: true,
@@ -218,7 +232,7 @@ async function getInstructorCourses(req, res, next) {
 async function enrollCourse(req, res, next) {
   try {
     const { courseId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user._id || req.user.id;
 
     // Check if course exists
     const course = await Course.findById(courseId);

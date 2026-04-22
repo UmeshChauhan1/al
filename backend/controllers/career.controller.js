@@ -119,7 +119,7 @@ async function addCareer(req,res,next){
             location: req.body.location,
             job_title: req.body.job_title,
             description: req.body.description,
-            user: req.body.user_id || req.body.user,
+            user: req.body.user_id || req.body.user || req.user?.id || req.user?._id,
             skills: req.body.skills || [],
             job_type: req.body.job_type || 'full-time',
             experience_level: req.body.experience_level || 'mid',
@@ -156,6 +156,10 @@ async function updateCareer(req,res,next){
         if (req.body.user_id) {
             updateData.user = req.body.user_id;
             delete updateData.user_id;
+        }
+
+        if (!updateData.user && (req.user?.id || req.user?._id)) {
+            updateData.user = req.user.id || req.user._id;
         }
         
         await Career.findByIdAndUpdate(req.params.id, updateData, { new: true });

@@ -28,7 +28,7 @@ const Footer = () => {
   const rightColLinks = quickLinks.slice(half);
 
   const socialLinks = [
-    { icon: FaLinkedin, href: 'https://linkedin.com', label: 'LinkedIn' },
+    { icon: FaLinkedin, href: 'https://www.linkedin.com/in/shrutinavik', label: 'LinkedIn' },
     { icon: FaTwitter, href: 'https://twitter.com', label: 'Twitter' },
     { icon: FaFacebook, href: 'https://facebook.com', label: 'Facebook' },
     { icon: FaInstagram, href: 'https://instagram.com', label: 'Instagram' },
@@ -38,19 +38,19 @@ const Footer = () => {
     { 
       icon: <FaPhone />, 
       title: 'Phone', 
-      value: '(+91) 888-585-8585', 
-      link: 'tel:+918885858585' 
+      value: '(+91) 9598487387', 
+      link: 'tel:+919598487387' 
     },
     { 
       icon: <FaEnvelope />, 
       title: 'Email', 
-      value: 'contact@paranox.edu', 
-      link: 'mailto:contact@paranox.edu' 
+      value: 'navikshruti@gmail.com', 
+      link: 'mailto:navikshruti@gmail.com' 
     },
     { 
       icon: <FaMapMarkerAlt />, 
       title: 'Address', 
-      value: '123 University Ave, Tech City, TC 12345', 
+      value: 'LPU, Jalandhar, Punjab', 
       link: '#' 
     },
   ];

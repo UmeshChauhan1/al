@@ -21,10 +21,14 @@ const Login = () => {
     if (location.state && location.state.action === "navtologin") {
       toast.info("Please Login Now");
     }
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get("error") === "google_auth_failed") {
+      toast.error("Google sign-in failed. Please try again.");
+    }
     return () => {
       // cleanup
     };
-  }, [location.state]);
+  }, [location.state, location.search]);
 
   const handleGoogleAuth = (e) => {
     e.preventDefault();

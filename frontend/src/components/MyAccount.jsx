@@ -1,11 +1,11 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaStar } from 'react-icons/fa';
+import { FaPlus, FaStar, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { baseUrl, skillsUrl } from '../utils/globalurl';
+import { apiUrl, baseUrl, skillsUrl, studentUrl } from '../utils/globalurl';
 import { useAuth } from '../AuthContext';
 const MyAccount = () => {
-    const { isAlumnus } = useAuth();
+    const { isAlumnus, isStudent } = useAuth();
     const [acc, setAcc] = useState({
         name: '',
         connected_to: "",
@@ -14,6 +14,9 @@ const MyAccount = () => {
         gender: "",
         password: "",
         batch: "",
+        enrollment_year: "",
+        current_year: "",
+        roll_number: "",
     });
     const [file, setFile] = useState(null);
     const [courses, setCourses] = useState([]);
@@ -23,30 +26,53 @@ const MyAccount = () => {
     const [loadingSkills, setLoadingSkills] = useState(false);
 
     useEffect(() => {
-        const alumnus_id = localStorage.getItem("alumnus_id");
+        const userId = localStorage.getItem("user_id") || localStorage.getItem("alumnus_id");
         const fetchData = async () => {
             try {
-                const [alumnusDetailsRes, coursesRes] = await Promise.all([
-                    axios.get(`${baseUrl}/alumni/${alumnus_id}`, { withCredentials: true }),
-                    axios.get(`${baseUrl}/courses`)
-                ]);
+                const coursePromise = axios.get(`${apiUrl}/api/courses`);
+                const profilePromise = isStudent
+                    ? axios.get(`${studentUrl}/profile`, { withCredentials: true })
+                    : axios.get(`${baseUrl}/alumni/${userId}`, { withCredentials: true });
 
-if (alumnusDetailsRes.data) {
-                    const data = alumnusDetailsRes.data;
-                    // Map nested structure to flat form state
-                    setAcc({
-                        name: data.name || '',
-                        email: data.email || '',
-                        gender: data.alumnus_bio?.gender || '',
-                        batch: data.alumnus_bio?.batch || '',
-                        course_id: data.alumnus_bio?.course?._id || data.alumnus_bio?.course || '',
-                        connected_to: data.alumnus_bio?.connected_to || '',
-                        password: ''
-                    });
-                    // Set skills from user profile
-                    setSkills(data.alumnus_bio?.skills || []);
+                const [profileRes, coursesRes] = await Promise.all([profilePromise, coursePromise]);
+
+                const data = profileRes.data;
+                if (data) {
+                    if (isStudent) {
+                        setAcc({
+                            name: data.name || '',
+                            email: data.email || '',
+                            gender: data.student_bio?.gender || '',
+                            enrollment_year: data.student_bio?.enrollment_year || '',
+                            current_year: data.student_bio?.current_year || '',
+                            course_id: data.student_bio?.course?._id || data.student_bio?.course || '',
+                            roll_number: data.student_bio?.roll_number || '',
+                            connected_to: '',
+                            batch: '',
+                            password: ''
+                        });
+                        setSkills([]);
+                    } else {
+                        setAcc({
+                            name: data.name || '',
+                            email: data.email || '',
+                            gender: data.alumnus_bio?.gender || '',
+                            batch: data.alumnus_bio?.batch || '',
+                            course_id: data.alumnus_bio?.course?._id || data.alumnus_bio?.course || '',
+                            connected_to: data.alumnus_bio?.connected_to || '',
+                            enrollment_year: '',
+                            current_year: '',
+                            roll_number: '',
+                            password: ''
+                        });
+                        setSkills(data.alumnus_bio?.skills || []);
+                    }
                 }
-                if (coursesRes.data) setCourses(coursesRes.data);
+
+                const courseList = Array.isArray(coursesRes.data)
+                    ? coursesRes.data
+                    : (coursesRes.data?.data || []);
+                setCourses(courseList);
 
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -54,7 +80,7 @@ if (alumnusDetailsRes.data) {
             }
 };
         fetchData();
-    }, []);
+    }, [isStudent]);
 
     // Fetch skill endorsements when skills change
     useEffect(() => {
@@ -92,24 +118,49 @@ if (alumnusDetailsRes.data) {
         event.preventDefault();
         const alumnus_id = localStorage.getItem("alumnus_id");
         const user_id = localStorage.getItem("user_id");
-        const pswrd = document.getElementById("pswrd")?.value || "";
+        const pswrd = (acc.password || '').trim();
 
         try {
-            const formData = new FormData();
-            if (file) formData.append('avatar', file);
-            formData.append('name', acc.name);
-            formData.append('connected_to', acc.connected_to);
-            formData.append('course_id', acc.course_id);
-            formData.append('email', acc.email);
-            formData.append('gender', acc.gender);
-            formData.append('password', pswrd);
-            formData.append('batch', acc.batch);
-            formData.append('alumnus_id', alumnus_id);
-            formData.append('user_id', user_id);
+            let response;
 
-            const response = await axios.put(`${baseUrl}/alumni/account`, formData, { withCredentials: true });
-            toast.success(response.data.message);
+            if (isStudent) {
+                const formData = new FormData();
+                if (file) formData.append('avatar', file);
+                formData.append('name', acc.name);
+                formData.append('email', acc.email);
+                if (pswrd) {
+                    formData.append('password', pswrd);
+                }
+                formData.append('student_bio', JSON.stringify({
+                    gender: acc.gender,
+                    enrollment_year: Number(acc.enrollment_year),
+                    current_year: Number(acc.current_year),
+                    course: acc.course_id,
+                    roll_number: acc.roll_number
+                }));
+
+                response = await axios.put(`${studentUrl}/profile`, formData, { withCredentials: true });
+            } else {
+                const formData = new FormData();
+                if (file) formData.append('avatar', file);
+                formData.append('name', acc.name);
+                formData.append('connected_to', acc.connected_to);
+                formData.append('course_id', acc.course_id);
+                formData.append('email', acc.email);
+                formData.append('gender', acc.gender);
+                if (pswrd) {
+                    formData.append('password', pswrd);
+                }
+                formData.append('batch', acc.batch);
+                formData.append('alumnus_id', alumnus_id);
+                formData.append('user_id', user_id);
+
+                response = await axios.put(`${baseUrl}/alumni/account`, formData, { withCredentials: true });
+            }
+
+            toast.success(response.data?.message || 'Account updated successfully');
             setFile(null);
+            setAcc((prev) => ({ ...prev, password: '' }));
 } catch (error) {
             toast.error('An error occurred while updating account');
             console.error('Error:', error);
@@ -199,19 +250,39 @@ if (alumnusDetailsRes.data) {
                                         </select>
                                     </div>
 
-                    <label className="col-sm-2 col-form-label">Batch</label>
+                    <label className="col-sm-2 col-form-label">{isStudent ? 'Enrollment Year' : 'Batch'}</label>
                     <div className="col-sm-4">
                         <input
                             type="number"
                             className="form-control"
-                            name="batch"
+                            name={isStudent ? 'enrollment_year' : 'batch'}
                             required
-                            value={acc?.batch || ''}
+                            value={isStudent ? (acc?.enrollment_year || '') : (acc?.batch || '')}
                             onChange={handleChange}
                         />
                     </div>
-                </div>                                <div className="form-group row">
-                                    <label className="col-sm-2 col-form-label">Course Graduated</label>
+                </div>
+
+                                {isStudent && (
+                                    <div className="form-group row">
+                                        <label className="col-sm-2 col-form-label">Current Year</label>
+                                        <div className="col-sm-10">
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                name="current_year"
+                                                min="1"
+                                                max="6"
+                                                required
+                                                value={acc?.current_year || ''}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="form-group row">
+                                    <label className="col-sm-2 col-form-label">{isStudent ? 'Course' : 'Course Graduated'}</label>
                                     <div className="col-sm-10">
                                         <select
                                             className="form-control select2"
@@ -222,13 +293,29 @@ if (alumnusDetailsRes.data) {
                                         >
                                             <option disabled value="">Select course</option>
                                             {courses.map(c => (
-                                                <option key={c._id || c.id} value={c._id || c.id}>{c.course}</option>
+                                                <option key={c._id || c.id} value={c._id || c.id}>{c.title || c.course}</option>
                                             ))}
                                         </select>
                                     </div>
                                 </div>
 
-                                <div className="form-group row">
+                                {isStudent && (
+                                    <div className="form-group row">
+                                        <label className="col-sm-2 col-form-label">Roll Number</label>
+                                        <div className="col-sm-10">
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="roll_number"
+                                                placeholder="Enter your roll number"
+                                                value={acc?.roll_number || ''}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {isAlumnus && <div className="form-group row">
                                     <label className="col-sm-2 col-form-label">Currently Connected To</label>
                                     <div className="col-sm-10">
                                         <textarea
@@ -240,7 +327,7 @@ if (alumnusDetailsRes.data) {
                                             onChange={handleChange}
                                         ></textarea>
                                     </div>
-                                </div>
+                                </div>}
 
                                 { isAlumnus && <div className="form-group row">
                                     <label htmlFor="avatar" className="col-sm-2 col-form-label">Image</label>
@@ -277,6 +364,7 @@ if (alumnusDetailsRes.data) {
                                             className="form-control"
                                             name="password"
                                             placeholder="Enter your password"
+                                            value={acc?.password || ''}
                                             onChange={handleChange}
                                         />
                                         <small className="form-text text-info fst-italic">

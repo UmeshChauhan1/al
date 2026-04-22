@@ -124,7 +124,7 @@ useEffect(() => {
                                 <ul className="dropdown-menu ">
                                     {isStudent && <li><Link onClick={toggleMenu} className="dropdown-item " to="student-dashboard" ><MdDashboard /> Dashboard</Link></li>}
                                     {isAdmin && <li><Link onClick={toggleMenu} className="dropdown-item " to="dashboard" ><MdDashboard /> Dashboard</Link></li>}
-                                    {!isAdmin && <li><Link onClick={toggleMenu} className="dropdown-item" to="account" ><FaCog /> Manage Account</Link></li>}
+                                    {!isAdmin && <li><Link onClick={toggleMenu} className="dropdown-item" to="/account" ><FaCog /> Manage Account</Link></li>}
                                     <li><hr className="dropdown-divider" /></li>
                                     <li><button className="dropdown-item" onClick={handleLogout}><FaPowerOff /> Logout</button></li>
                                 </ul>

@@ -10,10 +10,16 @@ const AdminCourses = () => {
     id: ''
   });
 
+  const normalizeCourses = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+  };
+
   useEffect(() => {
     axios.get(`${baseUrl}/courses`, { withCredentials: true })
       .then((res) => {
-        setCourses(res.data);
+        setCourses(normalizeCourses(res.data));
       })
       .catch((err) => console.log(err));
   }, []);
@@ -34,7 +40,7 @@ const AdminCourses = () => {
     try {
       const response = await axios.delete(`${baseUrl}/courses/${id}`, { withCredentials: true });
       toast.warning(response.data.message);
-      setCourses(courses.filter(c => (c._id || c.id) !== id));
+      setCourses((prevCourses) => prevCourses.filter(c => (c._id || c.id) !== id));
     } catch (error) {
       console.error('Error:', error);
       toast.error("An error occurred");
@@ -60,22 +66,23 @@ const AdminCourses = () => {
     try {
       if (name.id) {
         // If id exists, it's an update operation
-        const res = await axios.put(`${baseUrl}/courses/${name.id}`, { course: name.course }, { withCredentials: true });
+        const res = await axios.put(`${baseUrl}/courses/${name.id}`, { title: name.course }, { withCredentials: true });
         toast.success("Course updated successfully");
         setCourses(prevCourses => {
           const updatedCourses = prevCourses.map(course => {
             if ((course._id || course.id) === name.id) {
-              return { ...course, course: name.course };
+              return { ...course, title: name.course };
             }
             return course;
           });
           return updatedCourses;
         });
       } else {
-        const res = await axios.post(`${baseUrl}/courses`, { course: name.course }, { withCredentials: true });
+        const res = await axios.post(`${baseUrl}/courses`, { title: name.course }, { withCredentials: true });
         toast.success("Course saved successfully");
-        // Backend returns the full course object with _id
-        setCourses([...courses, res.data]);
+        // Backend returns either the created course object or a wrapped payload.
+        const createdCourse = res.data?.data || res.data;
+        setCourses((prevCourses) => [...prevCourses, createdCourse]);
       }
       setName({ course: '', id: '' }); // Reset the input fields
     } catch (error) {
@@ -90,7 +97,7 @@ const AdminCourses = () => {
 <div className="col-lg-12">
         <div className="row">
           <div className="col-md-4">
-            <form >
+            <form onSubmit={handleSubmit}>
               <div className="card">
                 <div className="card-header">
                   Course Form
@@ -115,8 +122,7 @@ const AdminCourses = () => {
                     <div className="col-md-6">
                       <button
                         className="btn btn-sm btn-primary btn-block"
-                        // onClick={handleSave}
-                        onClick={(e) => handleSubmit(e, { course: name.course })}
+                        type="submit"
                       >
                         Save
                       </button>
@@ -144,12 +150,12 @@ const AdminCourses = () => {
                     {courses.map((c, index) => (
                       <tr  key={index}>
                         <td className="text-center">{index + 1}</td>
-                        <td>{c.course}</td>
+                        <td>{c.title || c.course || 'Untitled Course'}</td>
                         <td className="text-center">
                           <button
                             className="btn btn-sm btn-primary mr-2 edit_gallery"
                             type="button"
-                            onClick={() => handleInput(c.course, c._id || c.id)}
+                            onClick={() => handleInput(c.title || c.course || '', c._id || c.id)}
                           >
                             Edit
                           </button>

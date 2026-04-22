@@ -258,6 +258,21 @@ FRONTEND_URL=http://localhost:5173
 # Optional: Google Oauth
 GOOGLE_CLIENT_ID=your_google_oauth_client_id
 GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+
+# Chatbot (Gemini) - backend only
+GEMINI_API_KEY=your_gemini_api_key
+# Optional
+# GEMINI_MODEL=gemini-1.5-flash
+
+#### Google OAuth Redirect URI
+
+This project sends Google back to the backend callback at:
+
+`http://localhost:5000/api/oauth/callback/google`
+
+Add that exact URL to the Google Cloud Console under **Credentials -> OAuth 2.0 Client IDs -> Authorized redirect URIs**.
+
+If you deploy the backend, set `GOOGLE_CALLBACK_URL` to your deployed callback URL and register the same value in Google Cloud Console.
 ```
 
 **Important:** Replace `your_super_secret_jwt_key_change_this_in_production` with a strong, random string for JWT signing.

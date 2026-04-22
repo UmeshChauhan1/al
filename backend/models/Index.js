@@ -24,6 +24,9 @@ const UserBadge = require('./UserBadge.model');
 const Achievement = require('./Achievement.model');
 const Donation = require('./Donation.model');
 const DonationCampaign = require('./DonationCampaign.model');
+const Business = require('./Business.model');
+const BusinessReview = require('./BusinessReview.model');
+const BlacklistedToken = require('./BlacklistedToken.model');
 
 module.exports = {
   User,
@@ -50,5 +53,8 @@ module.exports = {
   UserBadge,
   Achievement,
   Donation,
-  DonationCampaign
+  DonationCampaign,
+  Business,
+  BusinessReview,
+  BlacklistedToken
 };

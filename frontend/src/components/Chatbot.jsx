@@ -16,52 +16,9 @@ import {
 } from 'react-icons/fi';
 import { RiRobotLine } from 'react-icons/ri';
 import { useTheme } from '../ThemeContext';
+import { apiUrl } from '../utils/globalurl';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-
-const SYSTEM_PROMPT = `You are a helpful AI assistant for the Alumni Management System, a platform that connects alumni with each other and provides career opportunities, mentorship, and community engagement.
-
-Key features and information available on the platform:
-
-1. Alumni & Student Network:
-   - Profiles include name, email, gender, batch (for alumni), enrollment year (for students), and current year of study.
-   - Alumni are verified/unverified (status 0 or 1).
-   - Profiles showcase specific skills and connected courses.
-
-2. Job Opportunities (Careers):
-   - Detailed listings with company name, location, job title, and description.
-   - Job types include: full-time, part-time, internship, contract, and remote.
-   - Experience levels: entry, mid, senior, and lead.
-   - Required skills are listed for each position.
-   - Applicants can track their application status (pending, accepted, rejected).
-
-3. Mentorship Programs:
-   - Mentor profiles include detailed bios, years of experience, current position, and company.
-   - Expertise and industries are highlighted.
-   - Mentors offer session types like: career guidance, mock interviews, resume review, skill development, and networking.
-   - Mentors can specify availability and preferred mentee levels (students, alumni, or both).
-
-4. Events:
-   - Features include titles, content descriptions, schedules, and banners.
-   - Ability for users to "commit" to attending events.
-
-5. Forums & Community:
-   - Discussion topics for broad community engagement and knowledge sharing.
-
-6. Academic Context:
-   - Detailed information about courses and departments.
-
-When answering:
-1. Be friendly, helpful, and encouraging.
-2. Provide specific information about platform features and data structures when asked (e.g., "A job listing typically includes the company, location, required skills, and salary range").
-3. Include relevant emojis to make responses engaging.
-4. If asked about features, explain how to use them and where to find them.
-5. Keep responses concise but informative.
-6. Always mention how to navigate to relevant sections.
-7. If you don't know something, suggest contacting support through the Contact page.
-
-Maintain context from previous messages in the conversation.`;
+const CHATBOT_API_URL = `${apiUrl}/api/chatbot/chat`;
 
 
 const Chatbot = () => {
@@ -109,65 +66,30 @@ const Chatbot = () => {
     try {
       setError(null);
 
-      // Build conversation context
-      const conversationHistory = messages
-        .map(msg => `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.text}`)
-        .join('\n');
-
-      const prompt = `${SYSTEM_PROMPT}\n\nConversation History:\n${conversationHistory}\n\nUser: ${userMessage}\n\nAssistant:`;
-
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const response = await fetch(CHATBOT_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 500,
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-            },
-          ],
+          userMessage,
+          history: messages.map((msg) => ({ type: msg.type, text: msg.text })),
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        const errorMsg = errorData.error?.message || 'Failed to get response from AI';
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg =
+          (typeof errorData?.error === 'string' && errorData.error) ||
+          errorData?.error?.message ||
+          'Failed to get response from AI';
         throw new Error(errorMsg);
       }
 
       const data = await response.json();
 
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-        const botResponse = data.candidates[0].content.parts[0].text.trim();
+      if (data.reply) {
+        const botResponse = data.reply.trim();
         return botResponse;
       } else {
         throw new Error('No response from AI');

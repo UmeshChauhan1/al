@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaUsers,
   FaUserCheck,
@@ -18,6 +18,7 @@ import { useAuth } from "../AuthContext";
 
 const AlumniList = () => {
   const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
   const [alumniList, setAlumniList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -187,6 +188,19 @@ const AlumniList = () => {
   ).length;
   const resultCount = filteredAlumni.length;
 
+  const handleJoinNetwork = () => {
+    if (!isLoggedIn) {
+      navigate("/signup");
+      return;
+    }
+
+    const section = document.getElementById("alumni-section");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    toast.info("You are already part of the network. Explore alumni below.");
+  };
+
   return (
     <>
       <ToastContainer position="top-center" />
@@ -204,14 +218,14 @@ const AlumniList = () => {
               Explore Alumni
             </a>
 
-            <button className="btn btn-outline-light btn-lg px-4">
+            <button className="btn btn-outline-light btn-lg px-4" onClick={handleJoinNetwork}>
               Join Network
             </button>
           </div>
         </div>
       </header>
 
-      <div className="container my-5">
+      <div className="container my-5" id="alumni-section">
         {/* ================= 4 SUMMARY CARDS ================= */}
         <div className="row g-4 mb-5">
           <div className="col-md-3">
@@ -325,6 +339,9 @@ const AlumniList = () => {
           {filteredAlumni.length > 0 ? (
             <div className="row justify-content-center g-5">
               {filteredAlumni.slice(0, 8).map((a, index) => (
+                (() => {
+                  const endorsements = getSkillEndorsements(a._id);
+                  return (
                 <div
                   className="col-12 col-sm-6 col-md-6 col-lg-3 d-flex justify-content-center"
                   key={a._id || a.id || index}
@@ -376,7 +393,7 @@ const AlumniList = () => {
                           <div className="mt-3">
                             <div className="d-flex flex-wrap justify-content-center gap-1">
                               {(a.alumnus_bio?.skills || []).slice(0, 3).map((skill, skillIdx) => {
-                                const endorsementData = endorsements.find(e => e.skill.toLowerCase() === skill.toLowerCase());
+                                const endorsementData = endorsements.find(e => (e.skill || '').toLowerCase() === skill.toLowerCase());
                                 const endorsementCount = endorsementData?.count || 0;
                                 return (
                                   <span 
@@ -413,8 +430,9 @@ const AlumniList = () => {
                       </div>
                     </div>
                   </div>
-                ),
-              )})
+                );
+                })()
+              ))}
             </div>
           ) : (
             <div className="text-center py-5">

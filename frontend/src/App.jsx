@@ -8,7 +8,9 @@ import ScrollToTop from "./components/ScrollToTop";
 import SmoothWheelScroll from "./components/SmoothWheelScroll";
 import PrivateRoute from "./components/PrivateRoute";
 import { privateRoutes } from "./config/routes";
-
+import EventCalendar from './components/EventCalendar';
+import EventDetails from './components/EventDetails';
+import MyEvents from './components/MyEvents';
 // Pages
 import Home from "./components/Home";
 import AlumniList from "./components/AlumniList";
@@ -83,7 +85,16 @@ function AppRouter() {
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/student-dashboard");
 
-  if (!isAuthReady) return null;
+  if (!isAuthReady) {
+    return (
+      <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status" aria-hidden="true" />
+          <p className="mt-3 mb-0 text-muted">Loading application...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

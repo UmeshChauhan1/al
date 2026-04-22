@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { authUrl, baseUrl, oauthUrl } from "../utils/globalurl";
+import { authUrl, apiUrl, oauthUrl } from "../utils/globalurl";
 import { useAuth } from "../AuthContext";
 
 const Signup = () => {
@@ -52,9 +52,12 @@ const Signup = () => {
 
   useEffect(() => {
     axios
-      .get(`${baseUrl}/courses`)
+      .get(`${apiUrl}/api/courses`)
       .then((res) => {
-        setCourses(res.data);
+        const courseList = Array.isArray(res.data)
+          ? res.data
+          : (res.data?.data || []);
+        setCourses(courseList);
       })
       .catch(() => toast.error("Unable to load courses."));
   }, []);
@@ -146,7 +149,11 @@ const Signup = () => {
                       </label>
                       <select
                         onChange={(e) =>
-                          setValues({ ...values, userType: e.target.value })
+                          setValues({
+                            ...values,
+                            userType: e.target.value,
+                            course_id: "",
+                          })
                         }
                         className="custom-select"
                         id="userType"
@@ -185,7 +192,7 @@ const Signup = () => {
                             </option>
                             {courses.map((c) => (
                               <option key={c._id || c.id} value={c._id || c.id}>
-                                {c.course}
+                                {c.title || c.course || 'Untitled Course'}
                               </option>
                             ))}
                           </select>
@@ -248,7 +255,7 @@ const Signup = () => {
                             </option>
                             {courses.map((c) => (
                               <option key={c._id || c.id} value={c._id || c.id}>
-                                {c.course}
+                                {c.title || c.course || 'Untitled Course'}
                               </option>
                             ))}
                           </select>

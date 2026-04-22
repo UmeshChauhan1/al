@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../AuthContext';
-import { baseUrl, oauthUrl } from '../utils/globalurl';
+import { apiUrl, oauthUrl } from '../utils/globalurl';
 
 const OAuthCompleteSignup = () => {
     const location = useLocation();
@@ -35,8 +35,13 @@ const OAuthCompleteSignup = () => {
         }
 
         // Fetch courses for the dropdown
-        axios.get(`${baseUrl}/courses`)
-            .then(res => setCourses(res.data))
+        axios.get(`${apiUrl}/api/courses`)
+            .then((res) => {
+                const courseList = Array.isArray(res.data)
+                    ? res.data
+                    : (res.data?.data || []);
+                setCourses(courseList);
+            })
             .catch(err => console.error(err));
     }, [tempToken, navigate]);
 
@@ -47,7 +52,7 @@ const OAuthCompleteSignup = () => {
             const res = await axios.post(`${oauthUrl}/google/complete-signup`, {
                 ...values,
                 tempToken
-            });
+            }, { withCredentials: true });
 
             if (res.data.signupStatus && res.data.loginStatus) {
                 // Set local storage and login context like regular login
@@ -99,7 +104,7 @@ const OAuthCompleteSignup = () => {
                                         <div className="form-group mb-3">
                                             <label htmlFor="userType" className="control-label">I am a</label>
                                             <select
-                                                onChange={(e) => setValues({ ...values, userType: e.target.value })}
+                                                onChange={(e) => setValues({ ...values, userType: e.target.value, course_id: '' })}
                                                 className="custom-select form-control"
                                                 id="userType"
                                                 required
@@ -118,7 +123,7 @@ const OAuthCompleteSignup = () => {
                                                     <select onChange={(e) => setValues({ ...values, course_id: e.target.value })} className="form-control" required value={values.course_id}>
                                                         <option disabled value="">Select course</option>
                                                         {courses.map(c => (
-                                                            <option key={c._id || c.id} value={c._id || c.id}>{c.course}</option>
+                                                            <option key={c._id || c.id} value={c._id || c.id}>{c.title || c.course || 'Untitled Course'}</option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -144,7 +149,7 @@ const OAuthCompleteSignup = () => {
                                                     <select onChange={(e) => setValues({ ...values, course_id: e.target.value })} className="form-control" required value={values.course_id}>
                                                         <option disabled value="">Select course</option>
                                                         {courses.map(c => (
-                                                            <option key={c._id || c.id} value={c._id || c.id}>{c.course}</option>
+                                                            <option key={c._id || c.id} value={c._id || c.id}>{c.title || c.course || 'Untitled Course'}</option>
                                                         ))}
                                                     </select>
                                                 </div>
