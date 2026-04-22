@@ -39,8 +39,7 @@ const normalizeOrigin = (origin = '') =>
 
 const DEFAULT_ORIGINS = [
     'http://localhost:5173',
-    'https://alumni-management-system-frontend.onrender.com',
-    'https://alumni-management-system-xi.vercel.app'
+    'https://al-roan.vercel.app/'
 ];
 
 const ENV_ORIGINS = [
